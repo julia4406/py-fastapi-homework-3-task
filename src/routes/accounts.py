@@ -86,7 +86,7 @@ async def activate(
         .options(joinedload(ActivationTokenModel.user))
         .where(
             ActivationTokenModel.token == data.token,
-            UserModel.email == data.email
+            ActivationTokenModel.user.has(UserModel.email == data.email)
         )
     )
     this_token = find_token_result.scalars().first()
@@ -150,7 +150,7 @@ async def reset_password_request(
         new_refresh_password_token = PasswordResetTokenModel(user=this_user)
         db.add(new_refresh_password_token)
         await db.commit()
-        await db.refresh(this_user, ["password_reset_token"])
+        await db.refresh(this_user)
 
     return MessageResponseSchema(
         message="If you are registered, you will receive an email with instructions."
