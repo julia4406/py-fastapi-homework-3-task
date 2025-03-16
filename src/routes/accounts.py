@@ -81,14 +81,14 @@ async def activate(
         data: UserActivationRequestSchema,
         db: AsyncSession = Depends(get_db)
 ):
-    find_token_result = await db.execute(select(ActivationTokenModel)
-    .options(
-        joinedload(ActivationTokenModel.user)
+    find_token_result = await db.execute(
+        select(ActivationTokenModel)
+        .options(joinedload(ActivationTokenModel.user))
+        .where(
+            ActivationTokenModel.token == data.token,
+            UserModel.email == data.email
+        )
     )
-    .where(
-        ActivationTokenModel.token == data.token,
-        UserModel.email == data.email,
-    ))
     this_token = find_token_result.scalars().first()
 
     if not this_token:
@@ -151,7 +151,6 @@ async def reset_password_request(
         db.add(new_refresh_password_token)
         await db.commit()
         await db.refresh(this_user, ["password_reset_token"])
-
 
     return MessageResponseSchema(
         message="If you are registered, you will receive an email with instructions."
@@ -281,7 +280,7 @@ async def login(
     "/refresh/",
     response_model=TokenRefreshResponseSchema
 )
-async def login(
+async def refresh(
         data: TokenRefreshRequestSchema,
         db: AsyncSession = Depends(get_db),
         jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
